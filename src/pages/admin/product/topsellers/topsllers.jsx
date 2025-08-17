@@ -73,7 +73,7 @@ export default function TopsellerForm() {
 
     try {
       const response = await axios.get(
-        `http://localhost:8000/api/topsellers`,
+        `https://fabricadmin.onrender.com/api/topsellers`,
         { params: { name: name.trim() } }
       );
       return response.data.exists;
@@ -132,13 +132,8 @@ export default function TopsellerForm() {
       }
 
       const response = await axios.post(
-        "http://localhost:8000/api/topsellers",
-        data,
-        {
-          headers: {
-            "Content-Type": "multipart/form-data",
-          },
-        }
+        "https://fabricadmin.onrender.com/api/topsellers",
+        data
       );
 
       if (response.data.success) {
@@ -158,7 +153,7 @@ export default function TopsellerForm() {
     } catch (error) {
       console.error("Error adding product:", error);
       const errorMessage =
-        error.response?.data?.message || "Failed to add product. Please try again.";
+        error.response?.data?.error || error.response?.data?.message || "Failed to add product. Please try again.";
       toast.error(errorMessage);
 
       // Handle validation errors from server

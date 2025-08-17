@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { StarIcon } from '@heroicons/react/24/solid';
+import { StarIcon, HeartIcon, CheckIcon } from '@heroicons/react/24/solid';
 
 const ProductDetails = () => {
   const { id } = useParams();
@@ -11,11 +11,12 @@ const ProductDetails = () => {
   const [selectedSize, setSelectedSize] = useState('');
   const [selectedColor, setSelectedColor] = useState('');
   const [quantity, setQuantity] = useState(1);
+  const [selectedImage, setSelectedImage] = useState(null);
 
   useEffect(() => {
     const fetchProduct = async () => {
       try {
-        const response = await fetch(`http://localhost:8000/api/products/${id}`);
+        const response = await fetch(`https://fabricadmin.onrender.com/api/products/${id}`);
         if (!response.ok) {
           throw new Error('Failed to fetch product');
         }
@@ -28,6 +29,11 @@ const ProductDetails = () => {
         // Set default color and size if available in the product data
         setSelectedColor(result.data.product.colors?.[0] || '');
         setSelectedSize(result.data.product.sizes?.[0] || '');
+        setSelectedImage(
+          result.data.product?.images?.[0] ||
+            result.data.product?.image ||
+            'https://via.placeholder.com/500x500?text=No+Image+Available'
+        );
       } catch (err) {
         console.error('Error:', err);
         setError('Failed to load product details');
@@ -107,59 +113,104 @@ const ProductDetails = () => {
     );
   };
 
+  // Compute images array and discount for display
+  const images = product?.images?.length
+    ? product.images
+    : product?.image
+    ? [product.image]
+    : [];
+  const hasOriginal = Number(product?.originalPrice) > 0;
+  const discountPct = hasOriginal
+    ? Math.round(((Number(product.originalPrice) - Number(product.price || 0)) / Number(product.originalPrice)) * 100)
+    : null;
+
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="w-full px-4 md:px-8 py-8 pt-24">
       {product ? (
-        <div className="max-w-4xl mx-auto bg-white rounded-xl shadow-md overflow-hidden">
+        <div className="w-full mx-auto bg-white rounded-xl shadow-md overflow-hidden">
           <div className="md:flex">
-            {/* Product Image */}
-            <div className="md:w-1/2 p-6 bg-gray-50 flex items-center justify-center">
-              <img 
-                src={product.image || 'https://via.placeholder.com/500x500?text=No+Image+Available'} 
-                alt={product.name || 'Product Image'}
-                className="max-h-96 w-auto object-contain"
-                onError={(e) => {
-                  e.target.onerror = null;
-                  e.target.src = 'https://via.placeholder.com/500x500?text=Image+Not+Available';
-                }}
-              />
+            {/* Product Gallery */}
+            <div className="md:w-1/2 p-6 bg-gray-50 flex">
+              {/* Thumbnails */}
+              <div className="w-20 mr-4 hidden sm:flex flex-col space-y-3 overflow-auto">
+                {(images.length ? images : [selectedImage]).map((img, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => setSelectedImage(img)}
+                    className={`relative w-20 h-20 rounded-lg overflow-hidden border ${
+                      selectedImage === img ? 'border-black' : 'border-gray-200'
+                    }`}
+                  >
+                    <img
+                      src={img}
+                      alt={`thumbnail-${idx}`}
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        e.currentTarget.src = 'https://via.placeholder.com/150x150?text=No+Image';
+                      }}
+                    />
+                  </button>
+                ))}
+              </div>
+
+              {/* Main Image */}
+              <div className="flex-1 flex items-center justify-center">
+                <img
+                  src={selectedImage || product.image || 'https://via.placeholder.com/500x500?text=No+Image+Available'}
+                  alt={product.name || 'Product Image'}
+                  className="max-h-96 w-auto object-contain"
+                  onError={(e) => {
+                    e.currentTarget.src = 'https://via.placeholder.com/500x500?text=Image+Not+Available';
+                  }}
+                />
+              </div>
             </div>
 
             {/* Product Info */}
             <div className="md:w-1/2 p-8">
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">
+              <h1 className="text-3xl font-extrabold text-gray-900 mb-2 uppercase tracking-tight">
                 {product.name || 'Product Name'}
               </h1>
               
+              {/* Rating */}
+              <div className="flex items-center mb-3">
+                <div className="flex">
+                  {[1, 2, 3, 4, 5].map((rating) => (
+                    <StarIcon
+                      key={rating}
+                      className={`h-5 w-5 ${
+                        rating <= (product.rating || 0)
+                          ? 'text-yellow-400'
+                          : 'text-gray-300'
+                      }`}
+                    />
+                  ))}
+                </div>
+                <span className="ml-2 text-sm text-gray-600">
+                  {(product.rating || 0).toFixed ? (product.rating || 0).toFixed(1) : product.rating || 0}/5
+                </span>
+              </div>
+
               {/* Price */}
               <div className="flex items-center mb-6">
                 <span className="text-2xl font-bold text-gray-900">
                   ${product.price || '0.00'}
                 </span>
-                {product.originalPrice && (
-                  <span className="ml-3 text-lg text-gray-500 line-through">
-                    ${product.originalPrice}
-                  </span>
+                {hasOriginal && (
+                  <>
+                    <span className="ml-3 text-lg text-gray-500 line-through">
+                      ${product.originalPrice}
+                    </span>
+                    {discountPct > 0 && (
+                      <span className="ml-3 text-xs bg-red-100 text-red-600 px-2 py-1 rounded-full font-semibold">-{discountPct}%</span>
+                    )}
+                  </>
                 )}
               </div>
 
-          {/* Rating */}
-          <div className="flex items-center mb-6">
-            <div className="flex">
-              {[1, 2, 3, 4, 5].map((rating) => (
-                <StarIcon
-                  key={rating}
-                  className={`h-5 w-5 ${
-                    rating <= (product.rating || 0)
-                      ? 'text-yellow-400'
-                      : 'text-gray-300'
-                  }`}
-                />
-              ))}
-            </div>
-            <span className="ml-2 text-sm text-gray-600">
-              {product.reviewCount || 0} reviews
-            </span>
+          {/* Reviews Count */}
+          <div className="flex items-center mb-6 text-sm text-gray-600">
+            <span>{product.reviewCount || 0} reviews</span>
           </div>
 
           {/* Description */}
@@ -172,17 +223,23 @@ const ProductDetails = () => {
           {product.colors && product.colors.length > 0 && (
             <div className="mb-6">
               <h3 className="text-sm font-medium text-gray-900 mb-2">Color</h3>
-              <div className="flex space-x-2">
+              <div className="flex space-x-3">
                 {product.colors.map((color) => (
                   <button
                     key={color}
                     onClick={() => setSelectedColor(color)}
-                    className={`w-8 h-8 rounded-full border-2 ${
-                      selectedColor === color ? 'border-black' : 'border-transparent'
+                    className={`relative w-8 h-8 rounded-full border-2 transition ring-offset-2 ${
+                      selectedColor === color ? 'ring-2 ring-black border-black' : 'border-gray-200 hover:border-gray-300'
                     }`}
                     style={{ backgroundColor: color }}
                     aria-label={color}
-                  />
+                  >
+                    {selectedColor === color && (
+                      <span className="absolute inset-0 flex items-center justify-center">
+                        <CheckIcon className="w-4 h-4 text-white" />
+                      </span>
+                    )}
+                  </button>
                 ))}
               </div>
             </div>
@@ -212,22 +269,22 @@ const ProductDetails = () => {
 
           {/* Quantity */}
           <div className="mb-8">
-            <label htmlFor="quantity" className="block text-sm font-medium text-gray-700 mb-2">
+            <label htmlFor="quantity" className="block text-sm font-medium text-gray-700 mb-2  text-black">
               Quantity
             </label>
             <div className="flex items-center">
               <button
                 onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                className="px-3 py-1 border border-gray-300 rounded-l-md bg-gray-100 hover:bg-gray-200"
+                className="px-3 py-1 border border-gray-300 rounded-l-md bg-gray-100 hover:bg-gray-200 text-black"
               >
                 -
               </button>
-              <span className="px-4 py-1 border-t border-b border-gray-300 text-center w-12">
+              <span className="px-4 py-1 border-t border-b border-gray-300 text-center w-12 text-black">
                 {quantity}
               </span>
               <button
                 onClick={() => setQuantity(quantity + 1)}
-                className="px-3 py-1 border border-gray-300 rounded-r-md bg-gray-100 hover:bg-gray-200"
+                className="px-3 py-1 border border-gray-300 rounded-r-md bg-gray-100 hover:bg-gray-200 text-black"
               >
                 +
               </button>
@@ -250,7 +307,7 @@ const ProductDetails = () => {
                 strokeLinecap="round"
                 strokeLinejoin="round"
                 strokeWidth={2}
-                d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"
+                d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a 2 2 0 11-4 0 2 2 0 014 0z"
               />
             </svg>
             Add to Cart
@@ -307,3 +364,4 @@ const ProductDetails = () => {
 };
 
 export default ProductDetails;
+

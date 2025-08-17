@@ -1,7 +1,10 @@
 import { useState, useEffect } from 'react';
 import { FiMenu, FiX, FiShoppingCart, FiUser, FiSearch, FiHeart } from 'react-icons/fi';
+import { useNavigate } from 'react-router-dom';
+
 
 const Header = () => {
+  const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
 
@@ -65,7 +68,10 @@ const Header = () => {
             <button className="p-2 text-white hover:text-white transition-colors">
               <FiHeart className="w-5 h-5" />
             </button>
-            <button className="p-2 text-white hover:text-white transition-colors">
+            <button 
+              onClick={() => navigate('/signin')}
+              className="p-2 text-white hover:text-white transition-colors"
+            >
               <FiUser className="w-5 h-5" />
             </button>
             <button className="p-2 text-white hover:text-white transition-colors relative">

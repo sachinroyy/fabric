@@ -1,10 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
-
 
 const Product = () => {
-  const [products, setProducts] = useState([]);
+  const [products, setProducts] = useState({ products: [] });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const navigate = useNavigate();
@@ -12,12 +10,14 @@ const Product = () => {
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const response = await fetch('http://localhost:8000/api/products');
+        const response = await fetch('https://fabricadmin.onrender.com/api/products');
+        
         if (!response.ok) {
           throw new Error('Failed to fetch products');
         }
+        
         const data = await response.json();
-        setProducts(data.products || []);
+        setProducts(data);
       } catch (err) {
         console.error('Error:', err);
         setError('Failed to load products. Please try again.');
@@ -31,6 +31,7 @@ const Product = () => {
 
   const addToCart = (product) => {
     console.log('Adding to cart:', product);
+    // Here you can implement your cart logic
     alert(`${product.name} added to cart!`);
   };
 
@@ -45,57 +46,52 @@ const Product = () => {
 
   if (error) {
     return (
-      <div className="text-center p-8 text-red-600">
-        <p className="text-xl font-semibold">{error}</p>
-        <p className="mt-2">Please check your connection and try again.</p>
-      </div>
-    );
-  }
-
-  if (!products.length) {
-    return (
-      <div className="text-center p-8">
-        <p className="text-xl">No products available</p>
-        <p className="text-gray-600 mt-2">Check back later for new arrivals!</p>
+      <div className="flex justify-center items-center h-64">
+        <p className="text-red-500">{error}</p>
       </div>
     );
   }
 
   return (
-    <div className="container mx-auto p-12">
-      <h1 className="text-3xl font-bold text-center mb-8 text-black">NEW ARRIVALS</h1>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        {products.map((product) => (
+    <div className="container mx-auto px-3 sm:px-4 py-6 sm:py-8">
+      <h1 className="text-2xl sm:text-3xl font-bold mb-6 sm:mb-8 text-center text-black uppercase">New Arrival</h1>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
+        {products.products && products.products.map((product) => (
           <div 
-            key={product.id} 
-            className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300 cursor-pointer"
-            onClick={() => navigate(`/product/${product.id}`)}
+            key={product._id} 
+            onClick={() => navigate(`/product/${product._id}`)}
+            className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-all duration-300 cursor-pointer"
           >
-            {/* Product Image */}
-            <div className="h-68 bg-gray-200 overflow-hidden">
+            <div className="relative">
               <img 
                 src={product.image} 
                 alt={product.name} 
-                className="w-full h-full object-cover"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  navigate(`/product/${product.id}`);
+                className="w-full h-48 sm:h-56 md:h-64 object-cover"
+                loading="lazy"
+                onError={(e) => {
+                  e.target.onerror = null;
+                  e.target.src = 'https://via.placeholder.com/300';
                 }}
               />
+              <div className="absolute inset-0 hidden sm:flex items-center justify-center opacity-0 hover:opacity-100">
+                <span className="bg-white text-black px-4 py-2 rounded-full font-medium">View Details</span>
+              </div>
             </div>
-            
-            {/* Product Info */}
-            <div 
-              className="p-4"
-              onClick={(e) => {
-                e.stopPropagation();
-                navigate(`/product/${product.id}`);
-              }}
-            >
-              <h2 className="text-lg font-semibold text-gray-800 mb-1 hover:text-gray-600">{product.name}</h2>
-              <p className="text-gray-600 font-medium text-lg mb-3">${product.price}</p>
-              
-             
+            <div className="p-4 text-center">
+              <h2 className="text-xl font-semibold mb-2 uppercase text-black">{product.name}</h2>
+              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 sm:gap-0">
+                <span className="text-lg font-bold text-black">₹{product.price?.toLocaleString()}</span>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    addToCart(product);
+                  }}
+                  className="bg-black text-white px-4 py-2.5 rounded hover:bg-gray-800 transition-colors w-full sm:w-auto text-sm sm:text-base"
+                  aria-label={`Add ${product.name} to cart`}
+                >
+                  Add to Cart
+                </button>
+              </div>
             </div>
           </div>
         ))}

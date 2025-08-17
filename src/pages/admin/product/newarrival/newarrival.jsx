@@ -19,7 +19,8 @@ export default function ProductForm() {
 
   const fetchProducts = async () => {
     try {
-      const response = await axios.get("http://localhost:8000/api/products");
+      const response = await axios.get("https://fabricadmin.onrender.com/api/products");
+      
       setProducts(response.data.products || []);
       setLoading(false);
     } catch (err) {
@@ -49,7 +50,7 @@ export default function ProductForm() {
     }
 
     try {
-      await axios.post("http://localhost:8000/api/products", formData, {
+      await axios.post("https://fabricadmin.onrender.com/api/products", formData, {
         headers: {
           'Content-Type': 'multipart/form-data'
         }

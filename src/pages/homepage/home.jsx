@@ -1,4 +1,3 @@
-
 import React from 'react';
 import Product from '../product/product';
 import AdsSlider from '../../components/adsslider';
@@ -20,6 +19,13 @@ const Home = () => {
             className="w-full h-full object-cover opacity-70"
           />
         </div>
+
+        {/* Top-right GIF overlay */}
+        <img
+          src="/images/animation.gif" 
+          alt="Animated badge"
+          className="absolute pl-200 pt-20 pr-20 rounded-full z-10"
+        />
         
         {/* Content */}
         <div className="container mx-auto px-4 md:px-20 relative z-10 py-16 h-full flex flex-col md:flex-row items-center justify-between">
@@ -48,8 +54,10 @@ const Home = () => {
       
       <AdsSlider />
       <Product />
-      <Dressstyle />
+
       <Topsellers />
+
+      <Dressstyle />
       <ReviewSection />
     </div>
     

@@ -1,95 +1,99 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 
 const Topsellers = () => {
-  const [dressStyles, setDressStyles] = useState([]);
+  const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
-    const fetchDressStyles = async () => {
+    const fetchProducts = async () => {
       try {
-        const response = await axios.get('http://localhost:8000/api/topsellers');
-        setDressStyles(Array.isArray(response.data) ? response.data : []);
+        const response = await fetch('https://fabricadmin.onrender.com/api/topsellers');
+        
+        if (!response.ok) {
+          throw new Error('Failed to fetch products');
+        }
+        
+        const data = await response.json();
+        setProducts(data.topSellers || []);
       } catch (err) {
-        console.error('Error fetching dress styles:', err);
-        setError('Failed to load dress styles. Please try again later.');
+        console.error('Error:', err);
+        setError('Failed to load products. Please try again.');
       } finally {
         setLoading(false);
       }
     };
 
-    fetchDressStyles();
+    fetchProducts();
   }, []);
 
-  const handleStyleSelect = (style) => {
-    console.log('Selected style:', style);
-    // Add your selection logic here
+  const addToCart = (product) => {
+    console.log('Adding to cart:', product);
+    // Here you can implement your cart logic
+    alert(`${product.name} added to cart!`);
   };
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center min-h-[50vh]">
+      <div className="flex justify-center items-center h-64">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-gray-900"></div>
-        <span className="ml-3 text-lg">Loading dress styles...</span>
+        <span className="ml-3 text-lg">Loading products...</span>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="text-center p-8 text-red-600">
-        <p className="text-xl font-semibold">Error loading styles</p>
-        <p className="mt-2">{error}</p>
-      </div>
-    );
-  }
-
-  if (!dressStyles || dressStyles.length === 0) {
-    return (
-      <div className="text-center p-12">
-        <h1 className="text-3xl font-bold mb-4 text-black">TOP SELLERS</h1>
-        <p className="text-gray-600">No dress styles available at the moment.</p>
+      <div className="flex justify-center items-center h-64">
+        <p className="text-red-500">{error}</p>
       </div>
     );
   }
 
   return (
-    <div className="container mx-auto px-4 py-12">
-      <h1 className="text-3xl font-bold text-center mb-12 text-black">TOP SELLERS</h1>
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
-        {dressStyles.map((style, index) => (
+    <div className="container mx-auto px-4 py-8">
+      <h1 className="text-3xl font-bold mb-8 text-center text-black">TOP SELLERS</h1>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        {products && products.map((product) => (
           <div 
-            key={style._id || index} 
-            className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transition-shadow duration-300 cursor-pointer"
-            onClick={() => handleStyleSelect(style)}
+            key={product._id} 
+            onClick={() => navigate(`/topsellers/${product._id}`)}
+            className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-all duration-300 cursor-pointer"
           >
-            <div className="h-64 bg-gray-100 overflow-hidden">
+            <div className="relative">
               <img 
-                src={style.image} 
-                alt={style.name} 
-                className="w-full h-full object-cover"
+                src={product.image} 
+                alt={product.name} 
+                className="w-full h-64 object-cover"
                 onError={(e) => {
                   e.target.onerror = null;
-                  e.target.src = '/images/placeholder-style.jpg';
+                  e.target.src = 'https://via.placeholder.com/300';
                 }}
               />
+              <div className="absolute inset-0  flex items-center justify-center opacity-0 hover:opacity-100">
+                <span className="bg-white text-black px-4 py-2 rounded-full font-medium">View Details</span>
+              </div>
             </div>
-            
             <div className="p-4">
-              <h2 className="text-lg font-semibold text-gray-800 mb-1">
-                {style.name}
-              </h2>
-              <p className="text-gray-600 text-sm mb-2 line-clamp-2">
-                {style.description}
-              </p>
-              <div className="mt-3 text-sm text-gray-500">
-                {new Date(style.createdAt).toLocaleDateString()}
+              <h2 className="text-xl font-semibold mb-2 text-black">{product.name}</h2>
+              <div className="flex justify-between items-center">
+                <span className="text-lg font-bold text-black">₹{product.price?.toLocaleString()}</span>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    addToCart(product);
+                  }}
+                  className="bg-black text-white px-4 py-2 rounded hover:bg-gray-800 transition-colors  text-black"
+                >
+                  Add to Cart
+                </button>
               </div>
             </div>
           </div>
         ))}
-      </div>
+      </div> 
     </div>
   );
 };

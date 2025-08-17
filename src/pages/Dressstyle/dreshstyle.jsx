@@ -1,15 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 
 const Dressstyle = () => {
   const [dressStyles, setDressStyles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchDressStyles = async () => {
       try {
-        const response = await axios.get('http://localhost:8000/api/dressstyles');
+        const response = await axios.get('https://fabricadmin.onrender.com/api/dressstyles');
         setDressStyles(Array.isArray(response.data) ? response.data : []);
       } catch (err) {
         console.error('Error fetching dress styles:', err);
@@ -23,8 +25,7 @@ const Dressstyle = () => {
   }, []);
 
   const handleStyleSelect = (style) => {
-    console.log('Selected style:', style);
-    // Add your selection logic here
+    navigate(`/dressstyle/${style._id}`, { state: { style } });
   };
 
   if (loading) {
@@ -77,15 +78,13 @@ const Dressstyle = () => {
             </div>
             
             <div className="p-4">
-              <h2 className="text-lg font-semibold text-gray-800 mb-1">
+              <h2 className="text-lg font-semibold text-gray-800 mb-1 text-center">
                 {style.name}
               </h2>
-              <p className="text-gray-600 text-sm mb-2 line-clamp-2">
-                {style.description}
-              </p>
-              <div className="mt-3 text-sm text-gray-500">
-                {new Date(style.createdAt).toLocaleDateString()}
-              </div>
+             
+             
+             
+
             </div>
           </div>
         ))}

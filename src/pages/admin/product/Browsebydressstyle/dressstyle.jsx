@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios";
+import api from "../../../../api/axios";
 import { TrashIcon } from '@heroicons/react/24/outline';
 import { toast } from 'react-toastify';
 
@@ -21,8 +21,9 @@ export default function BrowseStyleForm() {
 
   const fetchDressStyles = async () => {
     try {
-      const response = await axios.get("http://localhost:8000/api/dressstyles");
-      setDressStyles(response.data.dressStyles || []);
+      const response = await api.get("https://fabricadmin.onrender.com/api/dressstyles");
+      // Backend returns an array of dress styles
+      setDressStyles(Array.isArray(response.data) ? response.data : []);
     } catch (err) {
       console.error('Error fetching dress styles:', err);
       toast.error('Failed to load dress styles');
@@ -54,13 +55,13 @@ export default function BrowseStyleForm() {
     }
 
     try {
-      const response = await axios.post("http://localhost:8000/api/dressstyles", formData, {
+      const response = await api.post("/dressstyles", formData, {
         headers: {
           'Content-Type': 'multipart/form-data'
         }
       });
-      
-      if (response.data.success) {
+      // Success: API returns created object with 201
+      if (response.status === 201) {
         toast.success("Dress style added successfully!");
         // Reset form
         setName("");
@@ -68,17 +69,14 @@ export default function BrowseStyleForm() {
         setPrice("");
         setImage(null);
         setPreview("");
-        if (document.getElementById('image-upload')) {
-          document.getElementById('image-upload').value = '';
-        }
+        const input = document.getElementById('image-upload');
+        if (input) input.value = '';
         // Refresh the list
         await fetchDressStyles();
-      } else {
-        throw new Error(response.data.error || 'Failed to add browse style');
       }
     } catch (err) {
       console.error('Error adding browse style:', err);
-      const errorMsg = err.response?.data?.error || 'Failed to add dress style. Please try again.';
+      const errorMsg = err.response?.data?.message || err.response?.data?.error || 'Failed to add dress style. Please try again.';
       setError(errorMsg);
       toast.error(errorMsg);
     } finally {
@@ -89,13 +87,13 @@ export default function BrowseStyleForm() {
   const handleDelete = async (id) => {
     if (window.confirm('Are you sure you want to delete this dress style?')) {
       try {
-        await axios.delete(`http://localhost:8000/api/dressstyles/${id}`);
+        await api.delete(`/dressstyles/${id}`);
         toast.success('Dress style deleted successfully');
         // Refresh the list
         await fetchDressStyles();
       } catch (err) {
         console.error('Error deleting dress style:', err);
-        toast.error(err.response?.data?.error || 'Failed to delete dress style');
+        toast.error(err.response?.data?.message || err.response?.data?.error || 'Failed to delete dress style');
       }
     }
   };
@@ -217,10 +215,9 @@ export default function BrowseStyleForm() {
                 <div className="p-4">
                   <h3 className="font-semibold text-lg">{style.name}</h3>
                   <p className="text-gray-600 text-sm mt-1 line-clamp-2">{style.description}</p>
-                  <div className="mt-2 flex justify-between items-center">
-                    <span className="font-bold">${style.price}</span>
+                  <div className="mt-2 flex justify-end items-center">
                     <span className="text-sm text-gray-500">
-                      Added: {new Date(style.createdAt).toLocaleDateString()}
+                      Added: {style.createdAt ? new Date(style.createdAt).toLocaleDateString() : '—'}
                     </span>
                   </div>
                 </div>
