@@ -46,6 +46,7 @@ export const AuthProvider = ({ children }) => {
       setUser(userData);
       // Store user data in localStorage for persistence
       localStorage.setItem('user', JSON.stringify(userData));
+      if (data.token) localStorage.setItem('auth_token', data.token);
       return userData;
     } catch (error) {
       console.error('Login failed', error);
@@ -60,6 +61,7 @@ export const AuthProvider = ({ children }) => {
       const userData = data.user || data;
       setUser(userData);
       localStorage.setItem('user', JSON.stringify(userData));
+      if (data.token) localStorage.setItem('auth_token', data.token);
       return userData;
     } catch (error) {
       console.error('Email login failed', error?.response?.data || error);
@@ -74,6 +76,7 @@ export const AuthProvider = ({ children }) => {
       const userData = data.user || data;
       setUser(userData);
       localStorage.setItem('user', JSON.stringify(userData));
+      if (data.token) localStorage.setItem('auth_token', data.token);
       return userData;
     } catch (error) {
       console.error('Register failed', error?.response?.data || error);
@@ -90,6 +93,7 @@ export const AuthProvider = ({ children }) => {
       // Clear user data regardless of API call result
       setUser(null);
       localStorage.removeItem('user');
+      localStorage.removeItem('auth_token');
       navigate('/signin');
     }
   };
