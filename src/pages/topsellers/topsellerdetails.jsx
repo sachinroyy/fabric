@@ -11,8 +11,9 @@ const TopsellerDetails = () => {
   useEffect(() => {
     const fetchProductDetails = async () => {
       try {
-        const response = await fetch(`https://fabricadmin.onrender.com/api/topsellers/${id}`);
-        
+        // const response = await fetch(`https://fabricadmin.onrender.com/api/topsellers/${id}`);
+        const response = await fetch(`http://localhost:8000/api/topsellers/${id}`);
+
         if (!response.ok) {
           throw new Error('Failed to fetch product details');
         }

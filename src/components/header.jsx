@@ -1,12 +1,14 @@
 import { useState, useEffect } from 'react';
 import { FiMenu, FiX, FiShoppingCart, FiUser, FiSearch, FiHeart } from 'react-icons/fi';
 import { useNavigate } from 'react-router-dom';
+import { useCart } from '../context/CartContext';
 
 
 const Header = () => {
   const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const { cartCount } = useCart() || { cartCount: 0 };
 
   // Handle scroll effect for header
   useEffect(() => {
@@ -74,10 +76,14 @@ const Header = () => {
             >
               <FiUser className="w-5 h-5" />
             </button>
-            <button className="p-2 text-white hover:text-white transition-colors relative">
+            <button
+              onClick={() => navigate('/cart')}
+              className="p-2 text-white hover:text-white transition-colors relative"
+              aria-label="Open cart"
+            >
               <FiShoppingCart className="w-5 h-5" />
-              <span className="absolute -top-1 -right-1 bg-indigo-600 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                0
+              <span className="absolute -top-1 -right-1 bg-indigo-600 text-white text-xs rounded-full min-w-5 h-5 px-1 flex items-center justify-center">
+                {cartCount || 0}
               </span>
             </button>
             

@@ -12,6 +12,7 @@ const Dressstyle = () => {
     const fetchDressStyles = async () => {
       try {
         const response = await axios.get('https://fabricadmin.onrender.com/api/dressstyles');
+        // const response = await axios.get('http://localhost:8000/api/dressstyles');
         setDressStyles(Array.isArray(response.data) ? response.data : []);
       } catch (err) {
         console.error('Error fetching dress styles:', err);
@@ -81,9 +82,9 @@ const Dressstyle = () => {
               <h2 className="text-lg font-semibold text-gray-800 mb-1 text-center">
                 {style.name}
               </h2>
-             
-             
-             
+              {/* <p className="text-center text-black font-bold mt-1">
+                ₹{Number(style.price || 0).toLocaleString()}
+              </p> */}
 
             </div>
           </div>

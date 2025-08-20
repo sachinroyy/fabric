@@ -1,10 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { StarIcon, HeartIcon, CheckIcon } from '@heroicons/react/24/solid';
+import api from '../../api/axios';
+import { useAuth } from '../../context/AuthContext';
+import { useCart } from '../../context/CartContext';
 
 const ProductDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const { cart = { items: [] }, refreshCart } = useCart() || {};
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -12,28 +17,18 @@ const ProductDetails = () => {
   const [selectedColor, setSelectedColor] = useState('');
   const [quantity, setQuantity] = useState(1);
   const [selectedImage, setSelectedImage] = useState(null);
+  const [addingId, setAddingId] = useState(null);
 
   useEffect(() => {
     const fetchProduct = async () => {
       try {
-        const response = await fetch(`https://fabricadmin.onrender.com/api/products/${id}`);
-        if (!response.ok) {
-          throw new Error('Failed to fetch product');
-        }
-        const result = await response.json();
-        console.log('API Response:', result); // Log the full response
-        console.log('Product ID:', result.data.product.id);
-        console.log('Product Name:', result.data.product.name);
-       
-        setProduct(result.data.product);
-        // Set default color and size if available in the product data
-        setSelectedColor(result.data.product.colors?.[0] || '');
-        setSelectedSize(result.data.product.sizes?.[0] || '');
-        setSelectedImage(
-          result.data.product?.images?.[0] ||
-            result.data.product?.image ||
-            'https://via.placeholder.com/500x500?text=No+Image+Available'
-        );
+        const { data } = await api.get(`/products/${id}`);
+        const p = data?.data?.product || data?.product || data; // handle different shapes
+        if (!p) throw new Error('Product not found');
+        setProduct(p);
+        setSelectedColor(p.colors?.[0] || '');
+        setSelectedSize(p.sizes?.[0] || '');
+        setSelectedImage(p?.images?.[0] || p?.image || 'https://via.placeholder.com/500x500?text=No+Image+Available');
       } catch (err) {
         console.error('Error:', err);
         setError('Failed to load product details');
@@ -41,14 +36,77 @@ const ProductDetails = () => {
         setLoading(false);
       }
     };
-
     fetchProduct();
   }, [id]);
 
-  const addToCart = () => {
-    // Add to cart logic here
-    console.log('Added to cart:', { ...product, selectedSize, selectedColor, quantity });
-    alert(`${product.name} added to cart!`);
+  const getCartQty = (pid) => {
+    try {
+      return (cart.items || [])
+        .filter((i) => i.product && (i.product._id === pid || i.product === pid))
+        .reduce((sum, i) => sum + (i.quantity || 0), 0);
+    } catch {
+      return 0;
+    }
+  };
+
+  const addToCart = async () => {
+    try {
+      if (!user) {
+        navigate('/signin');
+        return;
+      }
+      if (!product?._id) throw new Error('Invalid product');
+      setAddingId(product._id);
+      await api.post('/cart/add', {
+        productId: product._id,
+        quantity: Math.max(1, Number(quantity || 1)),
+        selectedSize: selectedSize || '',
+        selectedColor: selectedColor || '',
+      });
+      if (refreshCart) await refreshCart();
+    } catch (e) {
+      console.error('Add to cart failed', e?.response?.data || e);
+      alert(e?.response?.data?.message || 'Failed to add to cart');
+    } finally {
+      setAddingId(null);
+    }
+  };
+
+  const incrementInCart = async () => {
+    try {
+      if (!product?._id) return;
+      setAddingId(product._id);
+      await api.post('/cart/add', {
+        productId: product._id,
+        quantity: 1,
+        selectedSize: selectedSize || '',
+        selectedColor: selectedColor || '',
+      });
+      if (refreshCart) await refreshCart();
+    } catch (e) {
+      console.error('Increment cart error:', e);
+      alert(e?.response?.data?.message || 'Failed to update cart');
+    } finally {
+      setAddingId(null);
+    }
+  };
+
+  const decrementInCart = async () => {
+    try {
+      if (!product?._id) return;
+      setAddingId(product._id);
+      await api.post('/cart/decrement', {
+        productId: product._id,
+        selectedSize: selectedSize || '',
+        selectedColor: selectedColor || '',
+      });
+      if (refreshCart) await refreshCart();
+    } catch (e) {
+      console.error('Decrement cart error:', e);
+      alert(e?.response?.data?.message || 'Failed to update cart');
+    } finally {
+      setAddingId(null);
+    }
   };
 
   if (loading) {
@@ -291,27 +349,51 @@ const ProductDetails = () => {
             </div>
           </div>
 
-          {/* Add to Cart Button */}
-          <button
-            onClick={addToCart}
-            className="w-full bg-black text-white py-3 px-6 rounded-md hover:bg-gray-800 transition-colors duration-200 flex items-center justify-center mb-4"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-5 w-5 mr-2"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
+          {/* Add to Cart / In-cart Controls */}
+          {getCartQty(product?._id) > 0 ? (
+            <div className="flex items-center justify-center gap-3 mb-4">
+              <button
+                onClick={decrementInCart}
+                className="px-4 py-2 border rounded disabled:opacity-50 text-white"
+                disabled={addingId === product?._id}
+                aria-label={`Decrease quantity for ${product?.name}`}
+              >
+                −
+              </button>
+              <span className="min-w-10 text-center text-black">{getCartQty(product?._id)}</span>
+              <button
+                onClick={incrementInCart}
+                className="px-4 py-2 border rounded disabled:opacity-50 text-white"
+                disabled={addingId === product?._id}
+                aria-label={`Increase quantity for ${product?.name}`}
+              >
+                +
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={addToCart}
+              className="w-full bg-black text-white py-3 px-6 rounded-md hover:bg-gray-800 transition-colors duration-200 flex items-center justify-center mb-4 disabled:opacity-60"
+              disabled={addingId === product?._id}
+              aria-label={`Add ${product?.name} to cart`}
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a 2 2 0 11-4 0 2 2 0 014 0z"
-              />
-            </svg>
-            Add to Cart
-          </button>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-5 w-5 mr-2"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a 2 2 0 11-4 0 2 2 0 014 0z"
+                />
+              </svg>
+              {addingId === product?._id ? 'Adding...' : 'Add to Cart'}
+            </button>
+          )}
 
           {/* Additional Info */}
           <div className="mt-8 border-t border-gray-200 pt-6">
@@ -320,7 +402,7 @@ const ProductDetails = () => {
               <p>Price: ${product.price || 'N/A'}</p>
               <p>Material: {product.material || 'Not specified'}</p>
               <p>Care Instructions: {product.careInstructions || 'Machine wash cold, tumble dry low'}</p>
-              <p>SKU: {product.id || 'N/A'}</p>
+              <p>SKU: {product._id || product.id || 'N/A'}</p>
               <p>Added: {new Date(product.createdAt).toLocaleDateString()}</p>
             </div>
           </div>

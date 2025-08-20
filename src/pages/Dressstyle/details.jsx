@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
+import api from '../../api/axios';
+import { useAuth } from '../../context/AuthContext';
+import { useCart } from '../../context/CartContext';
 
 const DressStyleDetails = () => {
   const { id } = useParams();
@@ -11,6 +14,9 @@ const DressStyleDetails = () => {
   const [error, setError] = useState(null);
   const [quantity, setQuantity] = useState(1);
   const [selectedImage, setSelectedImage] = useState(null);
+  const { user } = useAuth();
+  const { cart = { items: [] }, refreshCart } = useCart() || {};
+  const [acting, setActing] = useState(false);
 
   useEffect(() => {
     const fetchDressStyle = async () => {
@@ -40,6 +46,78 @@ const DressStyleDetails = () => {
       setSelectedImage(imgs[0] || null);
     }
   }, [style]);
+
+  // ensure cart is loaded so quantity controls reflect current state
+  useEffect(() => {
+    if (user && refreshCart) refreshCart();
+  }, [user, refreshCart]);
+
+  // helpers to read cart qty for this style id
+  const getCartQty = () => {
+    try {
+      const idStr = String(id);
+      return (cart.items || [])
+        .filter(i => {
+          const prod = i.product;
+          const pid = typeof prod === 'object' ? prod?._id : prod;
+          return String(pid) === idStr;
+        })
+        .reduce((sum, i) => sum + (Number(i.quantity) || 0), 0);
+    } catch {
+      return 0;
+    }
+  };
+
+  const addToCart = async () => {
+    try {
+      if (!user) return navigate('/signin');
+      setActing(true);
+      await api.post('/cart/add', {
+        productId: id,
+        quantity: 1,
+        selectedSize: '',
+        selectedColor: ''
+      });
+      if (refreshCart) await refreshCart();
+    } catch (e) {
+      alert(e?.response?.data?.message || 'Failed to add to cart');
+    } finally {
+      setActing(false);
+    }
+  };
+
+  const incrementInCart = async () => {
+    try {
+      setActing(true);
+      await api.post('/cart/add', {
+        productId: id,
+        quantity: 1,
+        selectedSize: '',
+        selectedColor: ''
+      });
+      if (refreshCart) await refreshCart();
+    } catch (e) {
+      alert(e?.response?.data?.message || 'Failed to update cart');
+    } finally {
+      setActing(false);
+    }
+  };
+
+  const decrementInCart = async () => {
+    try {
+      setActing(true);
+      await api.post('/cart/decrement', {
+        productId: id,
+        selectedSize: '',
+        selectedColor: ''
+      });
+      if (refreshCart) await refreshCart();
+    } catch (e) {
+      alert(e?.response?.data?.message || 'Failed to update cart');
+    } finally {
+      setActing(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -200,32 +278,39 @@ const DressStyleDetails = () => {
               </div>
             )}
 
-            {/* Quantity */}
+            {/* Quantity / Add to Cart */}
             <div className="mb-6">
               <div className="flex items-center gap-4">
-                <div className="flex items-center">
+                {getCartQty() > 0 ? (
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={decrementInCart}
+                      className="px-3 py-1 rounded bg-black text-white disabled:opacity-50"
+                      disabled={acting}
+                      aria-label="Decrease quantity"
+                    >
+                      −
+                    </button>
+                    <span className="min-w-8 text-center">{getCartQty()}</span>
+                    <button
+                      onClick={incrementInCart}
+                      className="px-3 py-1 rounded bg-black text-white disabled:opacity-50"
+                      disabled={acting}
+                      aria-label="Increase quantity"
+                    >
+                      +
+                    </button>
+                  </div>
+                ) : (
                   <button
-                    onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                    className="px-3 py-1 border border-gray-300 rounded-l-md bg-gray-100 hover:bg-gray-200"
+                    onClick={addToCart}
+                    className="flex-1 bg-black text-white py-3 px-6 rounded-full hover:bg-gray-800 transition-colors disabled:opacity-60"
+                    disabled={acting}
+                    aria-label="Add to cart"
                   >
-                    -
+                    {acting ? 'Adding...' : 'Add to Cart'}
                   </button>
-                  <span className="px-4 py-1 border-t border-b border-gray-300 text-center w-12">
-                    {quantity}
-                  </span>
-                  <button
-                    onClick={() => setQuantity(quantity + 1)}
-                    className="px-3 py-1 border border-gray-300 rounded-r-md bg-gray-100 hover:bg-gray-200"
-                  >
-                    +
-                  </button>
-                </div>
-                <button
-                  onClick={() => alert(`${style?.name || 'Style'} added to cart!`)}
-                  className="flex-1 bg-black text-white py-3 px-6 rounded-full hover:bg-gray-800 transition-colors"
-                >
-                  Add to Cart
-                </button>
+                )}
               </div>
             </div>
 
