@@ -18,8 +18,9 @@ import SignIn from "./pages/sigin/singin";
 import Cart from "./pages/cart/Cart.jsx";
 
 function App() {
+  const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || "330609866345-0tir9es9jgovag6nrl221kl2mdrl6r0b.apps.googleusercontent.com";
   return (
-    <GoogleOAuthProvider clientId="330609866345-0tir9es9jgovag6nrl221kl2mdrl6r0b.apps.googleusercontent.com">
+    <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
       <BrowserRouter>
         <AuthProvider>
           <CartProvider>
