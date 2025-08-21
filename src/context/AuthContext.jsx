@@ -15,16 +15,17 @@ export const AuthProvider = ({ children }) => {
       try {
         // First check localStorage
         const storedUser = localStorage.getItem('user');
+        const token = localStorage.getItem('auth_token');
         if (storedUser) {
           setUser(JSON.parse(storedUser));
-        } else {
-          // If no stored user, try to fetch from server
+        } else if (token) {
+          // If token exists, fetch from server to restore session
           const { data } = await api.get('/auth/me');
           if (data?.user) {
             setUser(data.user);
             localStorage.setItem('user', JSON.stringify(data.user));
           }
-        }
+        } // If no stored user and no token, remain logged out
       } catch (error) {
         console.error('Not authenticated', error);
         setUser(null);
@@ -94,7 +95,7 @@ export const AuthProvider = ({ children }) => {
       setUser(null);
       localStorage.removeItem('user');
       localStorage.removeItem('auth_token');
-      navigate('/signin');
+      navigate('/');
     }
   };
 

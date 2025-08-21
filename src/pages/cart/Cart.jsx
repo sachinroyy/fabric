@@ -107,7 +107,24 @@ const Cart = () => {
                   onError={(e) => { e.currentTarget.src = 'https://via.placeholder.com/120x120?text=No+Image'; }}
                 />
                 <div className="flex-1">
-                  <h3 className="font-semibold">{item.nameSnapshot || item?.product?.name}</h3>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h3 className="font-semibold">{item.nameSnapshot || item?.product?.name}</h3>
+                    {item.source && (
+                      <span
+                        className={
+                          `text-xs px-2 py-0.5 rounded-full border ` +
+                          (item.source === 'topseller'
+                            ? 'bg-yellow-100 text-yellow-800 border-yellow-200'
+                            : item.source === 'dressstyle'
+                            ? 'bg-purple-100 text-purple-800 border-purple-200'
+                            : 'bg-blue-100 text-blue-800 border-blue-200')
+                        }
+                        title={`Source: ${item.source}`}
+                      >
+                        {item.source === 'topseller' ? 'Top Seller' : item.source === 'dressstyle' ? 'Dress Style' : 'Product'}
+                      </span>
+                    )}
+                  </div>
                   <p className="text-sm text-gray-600">{item.selectedColor && `Color: ${item.selectedColor}`} {item.selectedSize && `Size: ${item.selectedSize}`}</p>
                   <div className="mt-3 flex items-center justify-between gap-3">
                     <div className="flex items-center gap-2">
