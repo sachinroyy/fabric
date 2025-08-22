@@ -39,18 +39,45 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   const login = async (googleData) => {
+    // googleData is CredentialResponse from @react-oauth/google
     try {
-      const { data } = await api.post('/auth/google', {
-        credential: googleData.credential || googleData
-      });
-      const userData = data.user || data; // Handle different response formats
+      const credential = googleData?.credential || (typeof googleData === 'string' ? googleData : null);
+      if (!credential) {
+        const err = new Error('No Google credential received');
+        err.code = 'NO_CREDENTIAL';
+        throw err;
+      }
+
+      const { data } = await api.post('/auth/google', { credential });
+
+      const userData = data?.user || data; // backend returns { user }
+      if (!userData || (!userData.email && !userData.id)) {
+        const err = new Error('Login response missing user data');
+        err.code = 'BAD_RESPONSE';
+        throw err;
+      }
+
+      // Save in state and storage
       setUser(userData);
-      // Store user data in localStorage for persistence
       localStorage.setItem('user', JSON.stringify(userData));
       if (data.token) localStorage.setItem('auth_token', data.token);
+
+      // Verify cookie-based session now works
+      try {
+        const me = await api.get('/auth/me');
+        if (me?.data?.user) {
+          setUser(me.data.user);
+          localStorage.setItem('user', JSON.stringify(me.data.user));
+        }
+      } catch (meErr) {
+        // Helpful log if cookies/CORS prevented session
+        console.warn('Cookie session verification failed after Google login. Check CORS, SameSite=None, and frontend origin.', meErr?.response?.data || meErr);
+      }
+
       return userData;
     } catch (error) {
-      console.error('Login failed', error);
+      const serverMsg = error?.response?.data?.message || error.message || 'Login failed';
+      console.error('Login failed:', serverMsg, error?.response?.data || error);
       throw error;
     }
   };

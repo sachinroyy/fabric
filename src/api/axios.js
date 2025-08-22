@@ -1,6 +1,23 @@
 import axios from "axios";
 
-const API_URL = import.meta.env.VITE_API_URL || "https://fabricadmin.onrender.com" || "http://localhost:8000";
+// Resolve API base URL with sensible dev/prod defaults
+function resolveApiBase() {
+  const fromEnv = import.meta.env.VITE_API_URL;
+  if (fromEnv) return fromEnv.replace(/\/$/, "");
+
+  // Prefer localhost during local development
+  try {
+    const host = window?.location?.hostname;
+    if (host === 'localhost' || host === '127.0.0.1') {
+      return 'http://localhost:8000';
+    }
+  } catch {}
+
+  // Fallback to production API
+  return 'https://fabricadmin.onrender.com';
+}
+
+const API_URL = resolveApiBase();
 
 const api = axios.create({
   baseURL: `${API_URL}/api`,
