@@ -17,7 +17,6 @@ const Topsellers = () => {
     const fetchProducts = async () => {
       try {
         const response = await fetch('https://fabricadmin.onrender.com/api/topsellers');
-        // const response = await fetch('http://localhost:8000/api/topsellers');
         
         if (!response.ok) {
           throw new Error('Failed to fetch products');
@@ -137,7 +136,8 @@ const Topsellers = () => {
   return (
     <div className="container mx-auto px-4 py-8">
       <h1 className="text-3xl font-bold mb-8 text-center text-black">TOP SELLERS</h1>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+      {/* 2 cards per row on mobile, scale up on larger screens */}
+      <div className="grid grid-cols-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
         {products && products.map((product) => (
           <div 
             key={product._id} 
@@ -148,7 +148,7 @@ const Topsellers = () => {
               <img 
                 src={product.image} 
                 alt={product.name} 
-                className="w-full h-64 object-cover"
+                className="w-full h-90 sm:h-48 md:h-56 lg:h-64 object-cover p-5"
                 onError={(e) => {
                   e.target.onerror = null;
                   e.target.src = 'https://via.placeholder.com/300';

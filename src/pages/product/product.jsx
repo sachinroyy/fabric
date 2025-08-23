@@ -140,7 +140,7 @@ const Product = () => {
   return (
     <div className="container mx-auto px-3 sm:px-4 py-6 sm:py-8">
       <h1 className="text-2xl sm:text-3xl font-bold mb-6 sm:mb-8 text-center text-black uppercase">New Arrival</h1>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
+      <div className="grid grid-cols-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
         {products.products && products.products.map((product) => (
           <div 
             key={product._id} 
@@ -151,7 +151,7 @@ const Product = () => {
               <img 
                 src={product.image} 
                 alt={product.name} 
-                className="w-full h-48 sm:h-56 md:h-64 object-cover"
+                className="w-90 h-90 sm:h-56 md:h-64 object-cover p-5"
                 loading="lazy"
                 onError={(e) => {
                   e.target.onerror = null;

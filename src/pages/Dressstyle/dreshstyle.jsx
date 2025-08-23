@@ -59,18 +59,18 @@ const Dressstyle = () => {
   return (
     <div className="container mx-auto px-4 py-12">
       <h1 className="text-3xl font-bold text-center mb-12 text-black">DRESS STYLES</h1>
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
+      <div className="grid grid-cols-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
         {dressStyles.map((style, index) => (
           <div 
             key={style._id || index} 
             className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transition-shadow duration-300 cursor-pointer"
             onClick={() => handleStyleSelect(style)}
           >
-            <div className="h-64 bg-gray-100 overflow-hidden">
+            <div className="h-90 bg-gray-100 overflow-hidden">
               <img 
                 src={style.image} 
                 alt={style.name} 
-                className="w-full h-full object-cover"
+                className="w-90 h-90 object-cover p-5"
                 onError={(e) => {
                   e.target.onerror = null;
                   e.target.src = '/images/placeholder-style.jpg';
