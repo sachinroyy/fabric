@@ -77,21 +77,22 @@ const Header = () => {
             </IconButton>
 
             {/* Brand (shown on lg+, hidden on mobile because we center it below) */}
-            <a href="/" className="ml-2 text-6xl font-extrabold tracking-tight text-black hidden lg:block text-left">
-             
-             <img src={logo} alt="FABRIC" className="h-100 w-auto animate-logo-pan" />
-            </a>
+            <div className="hidden lg:flex items-center ml-2">
+              <a href="/" className="text-left inline-flex items-center">
+                <img src={logo} alt="FABRIC" className="h-16 w-auto animate-logo-pan" />
+              </a>
+            </div>
           </div>
 
           {/* Centered brand on mobile */}
-          <div className="absolute inset-x-0 flex justify-left lg:hidden pl-20 pt-20">
+          <div className="absolute inset-x-0 flex justify-left lg:hidden pl-20 text-bold">
             <a href="/" className="text-left inline-flex items-center">
-              <img src={logo} alt="FABRIC" className="h-100 w-auto animate-logo-pan" />
+              <img src={logo} alt="FABRIC" className="h-10 w-auto animate-logo-pan" />
             </a>
           </div>
 
           {/* Desktop Navigation */}
-          <nav className="hidden lg:flex items-center space-x-12 ">
+          <nav className="hidden lg:flex items-center space-x-12 text-bold ">
             <a href="#" className="text-black hover:text-black font-medium transition-colors !text-black">
               Home
             </a>
