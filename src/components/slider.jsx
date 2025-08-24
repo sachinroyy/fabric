@@ -2,19 +2,14 @@ import React, { useState, useEffect } from "react";
 import { Box, IconButton } from "@mui/material";
 import { ArrowBackIos, ArrowForwardIos } from "@mui/icons-material";
 import { motion, AnimatePresence } from "framer-motion";
-import slider01 from "../../public/images/homwslider02.jpg"
-import slider02 from "../../public/images/homesliders04.png"
-import slider05 from "../../public/images/homwslider02.jpg"
 
-import slider03 from "../../public/images/komeslider03.jpg"
-import slider04 from "../../public/images/sliderhome01.jpg"
-
+// Using assets from public/ via root path. Files in public/ are served at '/'.
 const images = [
-  slider01,
-  slider02,
-  slider03,
-  slider04,
-  slider05,
+  "/images/homwslider02.jpg",
+  "/images/homesliders04.png",
+  "/images/komeslider03.jpg",
+  "/images/sliderhome01.jpg",
+  "/images/homwslider02.jpg",
 ];
 
 const ImageSlider = () => {

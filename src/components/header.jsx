@@ -10,7 +10,7 @@ import PersonOutlineIcon from '@mui/icons-material/PersonOutline';
 import ShoppingCartOutlinedIcon from '@mui/icons-material/ShoppingCartOutlined';
 import { useNavigate } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
-import logo from '../../public/images/logo.png';
+const logo = '/images/logo.png';
 
 
 const Header = () => {

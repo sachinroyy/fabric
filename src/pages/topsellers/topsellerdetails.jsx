@@ -1,12 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import api from '../../api/axios';
+import { useAuth } from '../../context/AuthContext';
+import { useCart } from '../../context/CartContext';
 
 const TopsellerDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const { cart, refreshCart } = useCart() || {};
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [adding, setAdding] = useState(false);
+  const [acting, setActing] = useState(false);
 
   useEffect(() => {
     const fetchProductDetails = async () => {
@@ -36,10 +43,79 @@ const TopsellerDetails = () => {
     fetchProductDetails();
   }, [id]);
 
-  const addToCart = () => {
-    console.log('Adding to cart:', product);
-    // Here you can implement your cart logic
-    alert(`${product.name} added to cart!`);
+  // Determine how many of this product are currently in the cart
+  const getCartQty = (prodId) => {
+    try {
+      const idStr = String(prodId);
+      return (cart?.items || [])
+        .filter((i) => {
+          const p = i.product;
+          const pid = typeof p === 'object' ? p?._id : p;
+          return pid && String(pid) === idStr;
+        })
+        .reduce((sum, i) => sum + (Number(i.quantity) || 0), 0);
+    } catch {
+      return 0;
+    }
+  };
+
+  const addToCart = async () => {
+    try {
+      if (!user) { navigate('/signin'); return; }
+      if (!product?._id) return;
+      setAdding(true);
+      await api.post('/cart/add', {
+        productId: product._id,
+        quantity: 1,
+        selectedSize: product.selectedSize || '',
+        selectedColor: product.color || product.selectedColor || ''
+      });
+      if (refreshCart) await refreshCart();
+    } catch (err) {
+      console.error('Add to cart error:', err);
+      alert(err?.response?.data?.message || 'Failed to add to cart');
+    } finally {
+      setAdding(false);
+    }
+  };
+
+  const incrementInCart = async () => {
+    try {
+      if (!user) { navigate('/signin'); return; }
+      if (!product?._id) return;
+      setActing(true);
+      await api.post('/cart/add', {
+        productId: product._id,
+        quantity: 1,
+        selectedSize: product.selectedSize || '',
+        selectedColor: product.color || product.selectedColor || ''
+      });
+      if (refreshCart) await refreshCart();
+    } catch (err) {
+      console.error('Increment cart error:', err);
+      alert(err?.response?.data?.message || 'Failed to update cart');
+    } finally {
+      setActing(false);
+    }
+  };
+
+  const decrementInCart = async () => {
+    try {
+      if (!user) { navigate('/signin'); return; }
+      if (!product?._id) return;
+      setActing(true);
+      await api.post('/cart/decrement', {
+        productId: product._id,
+        selectedSize: product.selectedSize || '',
+        selectedColor: product.color || product.selectedColor || ''
+      });
+      if (refreshCart) await refreshCart();
+    } catch (err) {
+      console.error('Decrement cart error:', err);
+      alert(err?.response?.data?.message || 'Failed to update cart');
+    } finally {
+      setActing(false);
+    }
   };
 
   if (loading) {
@@ -163,12 +239,35 @@ const TopsellerDetails = () => {
 
               {/* Actions */}
               <div className="mt-8 flex flex-col sm:flex-row gap-3">
-                <button
-                  onClick={addToCart}
-                  className="inline-flex justify-center items-center w-full sm:w-auto bg-black text-white py-3 px-6 rounded-lg hover:bg-gray-800 transition-colors font-medium"
-                >
-                  Add to Cart
-                </button>
+                {getCartQty(product?._id) > 0 ? (
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={decrementInCart}
+                      className="px-4 py-2 rounded bg-black text-white disabled:opacity-60"
+                      disabled={acting}
+                      aria-label={`Decrease quantity for ${product?.name}`}
+                    >
+                      −
+                    </button>
+                    <span className="min-w-8 text-center">{getCartQty(product?._id)}</span>
+                    <button
+                      onClick={incrementInCart}
+                      className="px-4 py-2 rounded bg-black text-white disabled:opacity-60"
+                      disabled={acting}
+                      aria-label={`Increase quantity for ${product?.name}`}
+                    >
+                      +
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    onClick={addToCart}
+                    className="inline-flex justify-center items-center w-full sm:w-auto bg-black text-white py-3 px-6 rounded-lg hover:bg-gray-800 transition-colors font-medium disabled:opacity-60"
+                    disabled={adding}
+                  >
+                    {adding ? 'Adding…' : 'Add to Cart'}
+                  </button>
+                )}
                 <button
                   type="button"
                   className="inline-flex justify-center items-center w-full sm:w-auto border border-gray-300 text-gray-800 py-3 px-6 rounded-lg hover:bg-gray-50 transition-colors"

@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../api/axios';
 import { useAuth } from '../../context/AuthContext';
+import loadRazorpay from '../../utils/loadRazorpay';
 
 const Cart = () => {
   const { user } = useAuth();
@@ -10,17 +11,18 @@ const Cart = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [actingId, setActingId] = useState(null);
+  const [paying, setPaying] = useState(false);
 
   useEffect(() => {
     const load = async () => {
       try {
         if (!user) {
           navigate('/signin');
-          return;
-        }
+          return; 
+        } 
         const { data } = await api.get('/cart');
         setCart(data.cart || { items: [] });
-      } catch (e) {
+      } catch (e) { 
         setError(e?.response?.data?.message || 'Failed to load cart');
       } finally {
         setLoading(false);
@@ -59,6 +61,7 @@ const Cart = () => {
     try {
       setActingId(item._id);
       await api.post('/cart/decrement', {
+        itemId: item._id,
         productId: item?.product?._id || item?.product,
         selectedSize: item.selectedSize || '',
         selectedColor: item.selectedColor || '',
@@ -72,6 +75,79 @@ const Cart = () => {
   };
 
   const subtotal = (cart.items || []).reduce((sum, i) => sum + (Number(i.priceSnapshot || 0)) * (Number(i.quantity || 1)), 0);
+
+  const handleCheckout = async () => {
+    try {
+      if (!user) {
+        navigate('/signin');
+        return;
+      }
+      if (subtotal <= 0) return;
+
+      setPaying(true);
+      await loadRazorpay();
+
+      // 1) Create order (amount in paise)
+      const { data } = await api.post('/payment/create-order', {
+        amount: Math.round(subtotal * 100),
+        currency: 'INR',
+      });
+      const { order, keyId } = data || {};
+      if (!order?.id || !keyId) throw new Error('Failed to initialize payment');
+
+      // 2) Open Razorpay checkout
+      const options = {
+        key: keyId,
+        amount: order.amount, // paise
+        currency: order.currency,
+        name: 'Fabric Store',
+        description: 'Cart payment',
+        order_id: order.id,
+        prefill: {
+          name: user?.name || user?.displayName || 'Customer',
+          email: user?.email || '',
+        },
+        notes: {
+          cartItems: String((cart.items || []).length),
+        },
+        theme: { color: '#121212' },
+        handler: async function (response) {
+          try {
+            // 3) Verify payment on backend
+            const verifyRes = await api.post('/payment/verify-payment', {
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_signature: response.razorpay_signature,
+            });
+            if (verifyRes?.data?.success) {
+              alert('Payment successful');
+              // Optionally refresh cart or navigate
+              await reloadCart();
+              navigate('/');
+            } else {
+              alert(verifyRes?.data?.message || 'Payment verification failed');
+            }
+          } catch (e) {
+            alert(e?.response?.data?.message || e.message || 'Payment verification error');
+          }
+        },
+        modal: {
+          ondismiss: function () {
+            setPaying(false);
+          },
+        },
+      };
+
+      // eslint-disable-next-line no-undef
+      const rzp = new window.Razorpay(options);
+      rzp.open();
+    } catch (e) {
+      console.error(e);
+      alert(e?.response?.data?.message || e.message || 'Checkout failed');
+    } finally {
+      setPaying(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -166,7 +242,13 @@ const Cart = () => {
               <span>Total</span>
               <span>${subtotal.toFixed(2)}</span>
             </div>
-            <button className="mt-4 w-full bg-black text-white py-2 rounded-md">Checkout</button>
+            <button
+              onClick={handleCheckout}
+              disabled={paying || subtotal <= 0}
+              className="mt-4 w-full bg-black text-white py-2 rounded-md disabled:opacity-60"
+            >
+              {paying ? 'Processing...' : 'Checkout'}
+            </button>
           </div>
         </div>
       )}
